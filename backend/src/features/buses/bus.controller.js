@@ -64,6 +64,19 @@ class BusController {
     }
   }
 
+  async updateBus(req, res, next) {
+    try {
+      const bus = await busService.updateBus(req.params.id, req.body);
+      return res.status(200).json({
+        success: true,
+        message: 'Bus updated successfully',
+        data: bus,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async deleteBus(req, res, next) {
     try {
       await busService.deleteBus(req.params.id);

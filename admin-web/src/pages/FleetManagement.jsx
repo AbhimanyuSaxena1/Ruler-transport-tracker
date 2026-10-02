@@ -96,6 +96,18 @@ export default function FleetManagement() {
     }
   };
 
+  const handleToggleStatus = async (id, currentStatus) => {
+    const statusCycle = { active: 'inactive', inactive: 'maintenance', maintenance: 'active' };
+    const newStatus = statusCycle[currentStatus] || 'active';
+    try {
+      await apiClient.patch(`/buses/${id}`, { status: newStatus });
+      setMessage({ text: `Bus status updated to "${newStatus}"`, type: 'success' });
+      fetchData();
+    } catch (err) {
+      setMessage({ text: err.response?.data?.message || 'Failed to update status', type: 'error' });
+    }
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -151,13 +163,17 @@ export default function FleetManagement() {
                     <BusIcon size={18} className="text-blue-500" /> {bus.busNumber}
                   </td>
                   <td className="p-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      bus.status === 'active' ? 'bg-green-100 text-green-700' :
-                      bus.status === 'maintenance' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-gray-100 text-gray-600'
-                    }`}>
+                    <button
+                      onClick={() => handleToggleStatus(bus._id, bus.status)}
+                      title="Click to cycle status"
+                      className={`px-2 py-1 rounded-full text-xs font-semibold cursor-pointer hover:opacity-75 transition ${
+                        bus.status === 'active' ? 'bg-green-100 text-green-700' :
+                        bus.status === 'maintenance' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-gray-100 text-gray-600'
+                      }`}
+                    >
                       {bus.status}
-                    </span>
+                    </button>
                   </td>
                   <td className="p-4 text-gray-600">{bus.capacity}</td>
                   <td className="p-4 text-gray-600">

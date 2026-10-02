@@ -82,21 +82,33 @@ class TrackingService {
         try {
           const Route = (await import('../routes/route.model.js')).default;
           const routeDoc = await Route.findById(bus.assignedRoute).populate('stops');
-          if (routeDoc && routeDoc.stops) {
-            stopETAs = routeDoc.stops.map((stop) => {
-              const stopLat = stop.location.coordinates[1];
-              const stopLng = stop.location.coordinates[0];
-              const distMeters = getDistanceMeters(latitude, longitude, stopLat, stopLng);
-              const etaMins = calculateETAMinutes(distMeters, updatedBus.speed);
-              const isArrived = distMeters <= 200; // 200m Geofence
-              return {
-                stopId: stop._id,
-                stopName: stop.name,
-                distanceMeters: distMeters,
-                etaMinutes: etaMins,
-                isArrived,
-              };
-            });
+          if (routeDoc && Array.isArray(routeDoc.stops)) {
+            stopETAs = routeDoc.stops
+              .map((stop) => {
+                if (
+                  !stop ||
+                  !stop.location ||
+                  !Array.isArray(stop.location.coordinates) ||
+                  stop.location.coordinates.length < 2
+                ) {
+                  return null;
+                }
+                const stopLat = stop.location.coordinates[1];
+                const stopLng = stop.location.coordinates[0];
+                if (typeof stopLat !== 'number' || typeof stopLng !== 'number') return null;
+
+                const distMeters = getDistanceMeters(latitude, longitude, stopLat, stopLng);
+                const etaMins = calculateETAMinutes(distMeters, updatedBus.speed);
+                const isArrived = distMeters <= 200; // 200m Geofence
+                return {
+                  stopId: stop._id,
+                  stopName: stop.name,
+                  distanceMeters: distMeters,
+                  etaMinutes: etaMins,
+                  isArrived,
+                };
+              })
+              .filter(Boolean);
           }
         } catch (e) {
           console.error('[Geofence] Error calculating ETAs:', e.message);

@@ -52,6 +52,15 @@ router.patch('/:id/assign-route', protect, authorize('admin'), busValidation.val
 });
 
 /**
+ * @route   PATCH /api/buses/:id
+ * @desc    Update bus fields (e.g. status: active | inactive | maintenance)
+ * @access  Private (Admin only)
+ */
+router.patch('/:id', protect, authorize('admin'), (req, res, next) => {
+  busController.updateBus(req, res, next);
+});
+
+/**
  * @route   DELETE /api/buses/:id
  * @desc    Delete a bus
  * @access  Private (Admin only)

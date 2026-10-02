@@ -56,6 +56,14 @@ class BusService {
     return bus.save();
   }
 
+  async updateBus(busId, updateData) {
+    const bus = await busRepository.findById(busId);
+    if (!bus) {
+      throw ApiError.notFound('Bus not found');
+    }
+    return busRepository.update(busId, updateData);
+  }
+
   async deleteBus(busId) {
     const bus = await busRepository.findById(busId);
     if (!bus) {
