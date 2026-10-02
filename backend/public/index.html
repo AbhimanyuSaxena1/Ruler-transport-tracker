@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Bus Tracker</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+        #map {
+            width: 100%;
+            height: 100vh;
+        }
+        #info-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 1000;
+            max-width: 300px;
+        }
+        h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            color: #333;
+        }
+        .bus-info {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .bus-info:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #28a745;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="info-panel">
+        <h2>Live Bus Tracking</h2>
+        <div id="buses-list">Waiting for updates...</div>
+    </div>
+    
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <!-- Socket.IO Client -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // Initialize Map
+        const map = L.map('map').setView([0, 0], 2); // Default global view
+        
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Store bus markers
+        const busMarkers = {};
+        const busesListEl = document.getElementById('buses-list');
+        
+        let firstUpdate = true;
+
+        // Connect to Socket.IO
+        const socket = io();
+
+        socket.on('connect', () => {
+            console.log('Connected to real-time server!');
+        });
+
+        socket.on('locationUpdate', (data) => {
+            console.log('Location update received:', data);
+            
+            const { busId, busNumber, latitude, longitude, speed, lastLocationUpdate } = data;
+            const latLng = [latitude, longitude];
+
+            // Update Map Marker
+            if (busMarkers[busId]) {
+                busMarkers[busId].setLatLng(latLng);
+            } else {
+                // Create new marker for this bus
+                const marker = L.marker(latLng).addTo(map);
+                marker.bindPopup(`<b>Bus: ${busNumber}</b><br>Speed: ${speed} km/h`).openPopup();
+                busMarkers[busId] = marker;
+            }
+
+            // Center map on first update
+            if (firstUpdate) {
+                map.setView(latLng, 15);
+                firstUpdate = false;
+            }
+
+            // Update UI Panel
+            updateInfoPanel(data);
+        });
+
+        function updateInfoPanel(data) {
+            // Find existing element or create new
+            let busEl = document.getElementById(`bus-info-${data.busId}`);
+            if (!busEl) {
+                busEl = document.createElement('div');
+                busEl.id = `bus-info-${data.busId}`;
+                busEl.className = 'bus-info';
+                
+                // Clear "Waiting..." if it's the first
+                if (busesListEl.innerHTML.includes('Waiting for updates')) {
+                    busesListEl.innerHTML = '';
+                }
+                
+                busesListEl.appendChild(busEl);
+            }
+
+            const timeString = new Date(data.lastLocationUpdate).toLocaleTimeString();
+            
+            busEl.innerHTML = `
+                <div><strong><span class="status"></span> Bus ${data.busNumber}</strong></div>
+                <div>Speed: ${Math.round(data.speed)} km/h</div>
+                <div style="font-size: 0.8em; color: #666;">Last seen: ${timeString}</div>
+            `;
+        }
+    </script>
+</body>
+</html>
