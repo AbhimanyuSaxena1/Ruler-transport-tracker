@@ -34,8 +34,3 @@ html, body, #root {
 .dark .leaflet-popup-tip {
   background-color: #09090b !important;
 }
-
-/* Minimalist Dark Mode Basemap Filter (OpenStreetMap with 0 API Key) */
-.dark .leaflet-tile-pane {
-  filter: invert(100%) hue-rotate(180deg) brightness(88%) contrast(96%) grayscale(15%);
-}

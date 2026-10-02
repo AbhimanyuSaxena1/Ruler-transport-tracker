@@ -331,12 +331,11 @@ export default function LiveMap() {
     );
   };
 
-  // Map Tile configuration: OpenStreetMap by default (100% free, 0 API key required)
-  // In dark mode, CSS filter on .dark .leaflet-tile-pane provides a sleek dark theme with zero watermark.
+  // Official CARTO Basemap API Key configuration
   const cartoKey =
     import.meta.env.VITE_CARTO_API_KEY ||
     localStorage.getItem('carto-api-key') ||
-    '';
+    'cb1_481f_1_8f54dbe0d9a39f053f457e83';
 
   const tileUrl = cartoKey
     ? isDark
@@ -344,9 +343,8 @@ export default function LiveMap() {
       : `https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=${cartoKey}`
     : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
-  const tileAttribution = cartoKey
-    ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-    : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+  const tileAttribution =
+    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
   return (
     <div
@@ -836,6 +834,7 @@ export default function LiveMap() {
           key={tileUrl + (isDark ? '-dark' : '-light')}
           attribution={tileAttribution}
           url={tileUrl}
+          subdomains={['a', 'b', 'c', 'd']}
         />
 
         <MapRecenter center={mapCenter} />
