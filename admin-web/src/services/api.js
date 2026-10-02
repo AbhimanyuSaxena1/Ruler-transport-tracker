@@ -7,6 +7,7 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
 
 // Request Interceptor: Attach Access Token
@@ -18,35 +19,39 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Response Interceptor: Handle 401 and Token Refresh
+// Response Interceptor: Handle 401 and Token Refresh via HTTP-Only Cookies
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Do NOT intercept auth endpoints (login, register, refresh) with token refresh loops
+    const isAuthEndpoint = originalRequest?.url?.includes('/auth/login') ||
+                           originalRequest?.url?.includes('/auth/register') ||
+                           originalRequest?.url?.includes('/auth/refresh-token');
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (!refreshToken) throw new Error('No refresh token available');
-
-        // Request new tokens
-        const response = await axios.post(`${API_URL}/auth/refresh-token`, { refreshToken });
+        // Request new tokens - browser sends refreshToken cookie automatically
+        const response = await axios.post(
+          `${API_URL}/auth/refresh-token`,
+          {},
+          { withCredentials: true }
+        );
         
-        const { accessToken, refreshToken: newRefreshToken } = response.data;
+        const { accessToken } = response.data.data || response.data;
         
-        // Save new tokens
+        // Save new access token
         localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', newRefreshToken);
 
         // Retry the original request
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
-        // If refresh fails, log out
+        // If refresh fails, log out cleanly
         localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
         window.location.href = '/login';
         return Promise.reject(refreshError);

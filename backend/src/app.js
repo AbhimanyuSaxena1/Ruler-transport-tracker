@@ -7,6 +7,7 @@ import busRoutes from './features/buses/bus.routes.js';
 import trackingRoutes from './features/tracking/tracking.routes.js';
 import routeRoutes from './features/routes/route.routes.js';
 import scheduleRoutes from './features/schedules/schedule.routes.js';
+import cookieParser from 'cookie-parser';
 import { notFoundHandler, errorHandler } from './middlewares/errorMiddleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -15,7 +16,11 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // Global Middlewares
-app.use(cors());
+app.use(cors({
+  origin: true,
+  credentials: true,
+}));
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));

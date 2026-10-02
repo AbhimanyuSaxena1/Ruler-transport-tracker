@@ -29,14 +29,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const response = await apiClient.post('/auth/login', { email, password });
-    const { user, accessToken, refreshToken } = response.data.data;
+    const { user, accessToken } = response.data.data;
     
     if (user.role !== 'admin') {
       throw new Error('Access denied. Administrator privileges required.');
     }
 
     localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
     localStorage.setItem('user', JSON.stringify(user));
     
     setUser(user);
@@ -45,15 +44,11 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (refreshToken) {
-        await apiClient.post('/auth/logout', { refreshToken });
-      }
+      await apiClient.post('/auth/logout');
     } catch (error) {
       console.error('Logout error', error);
     } finally {
       localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
       setUser(null);
     }

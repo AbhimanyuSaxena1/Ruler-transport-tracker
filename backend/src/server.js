@@ -2,6 +2,7 @@ import app from './app.js';
 import config from './config/config.js';
 import connectDB from './config/db.js';
 import { initSocket } from './config/socket.js';
+import autoSeedAdmin from './config/autoSeed.js';
 import http from 'http';
 
 const startServer = () => {
@@ -21,8 +22,10 @@ const startServer = () => {
     console.log(`===============================================`);
   });
 
-  // Initiate MongoDB connection (logs connection state or helpful diagnostic)
-  connectDB();
+  // Initiate MongoDB connection and ensure Admin exists
+  connectDB().then(() => {
+    autoSeedAdmin();
+  });
 
   // Graceful shutdown handling
   const shutdown = () => {
