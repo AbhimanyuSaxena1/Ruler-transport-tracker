@@ -162,32 +162,24 @@ export default function LiveMap() {
 
     socket.on('locationUpdate', (update) => {
       setBuses((prev) => {
-        if (update.inactive || update.status === 'inactive') {
-          const current = prev[update.busId];
-          if (!current) return prev;
-          return {
-            ...prev,
-            [update.busId]: {
-              ...current,
-              status: 'inactive',
-            },
-          };
-        }
+        const isInactive = update.inactive || update.status === 'inactive';
+        const current = prev[update.busId] || {};
         return {
           ...prev,
           [update.busId]: {
-            ...prev[update.busId],
+            ...current,
             _id: update.busId,
-            busNumber: update.busNumber,
-            status: update.status || 'active',
-            currentLocation: {
-              latitude: update.latitude,
-              longitude: update.longitude,
-            },
-            speed: update.speed,
-            heading: update.heading,
+            busNumber: update.busNumber || current.busNumber,
+            status: isInactive ? 'inactive' : (update.status || current.status || 'active'),
+            currentLocation: (update.latitude && update.longitude)
+              ? { latitude: update.latitude, longitude: update.longitude }
+              : current.currentLocation,
+            speed: update.speed !== undefined ? update.speed : current.speed,
+            heading: update.heading !== undefined ? update.heading : current.heading,
             lastLocationUpdate: update.lastLocationUpdate || new Date(),
-            stopETAs: update.stopETAs || [],
+            stopETAs: update.stopETAs || current.stopETAs || [],
+            assignedRoute: current.assignedRoute,
+            assignedDriver: current.assignedDriver,
           },
         };
       });
@@ -195,7 +187,10 @@ export default function LiveMap() {
 
     socket.on('busStatusChanged', ({ busId, status }) => {
       setBuses((prev) => {
-        if (!prev[busId]) return prev;
+        if (!prev[busId]) {
+          fetchData();
+          return prev;
+        }
         return {
           ...prev,
           [busId]: {
@@ -212,14 +207,13 @@ export default function LiveMap() {
     };
   }, [initialSearch]);
 
-  // Only display buses on the map if they are active AND actively sharing location within the last 3 minutes
+  // Only display buses on the map if they are active and have valid coordinates.
+  // Inactive buses, buses in maintenance, or buses where the driver is not sharing location are excluded.
   const isActivelySharing = (b) => {
     if (!b) return false;
-    if (b.status === 'inactive' || b.status === 'maintenance') return false;
+    if (b.status !== 'active') return false;
     if (!b.currentLocation?.latitude || !b.currentLocation?.longitude) return false;
-    if (!b.lastLocationUpdate) return false;
-    const ageMs = Date.now() - new Date(b.lastLocationUpdate).getTime();
-    return ageMs < 3 * 60 * 1000;
+    return true;
   };
 
   const activeBusesList = Object.values(buses).filter(isActivelySharing);
@@ -254,6 +248,7 @@ export default function LiveMap() {
   });
 
   const handleSelectRoute = (route) => {
+    if (!route) return;
     setSelectedRoute(route);
     // Find if any live bus is assigned to this route
     const liveBus = activeBusesList.find((b) => {
@@ -272,6 +267,11 @@ export default function LiveMap() {
       ]);
     } else if (route.path?.coordinates?.length > 0) {
       setMapCenter([route.path.coordinates[0][1], route.path.coordinates[0][0]]);
+    } else if (route.stops?.[0]?.location?.coordinates?.length >= 2) {
+      setMapCenter([
+        route.stops[0].location.coordinates[1],
+        route.stops[0].location.coordinates[0],
+      ]);
     }
   };
 
@@ -537,7 +537,7 @@ export default function LiveMap() {
                 {[
                   { id: 'stops', label: 'Route Stops' },
                   { id: 'buses', label: `Fleet (${filteredBuses.length})` },
-                  { id: 'timetable', label: 'Schedule' },
+                  { id: 'timetable', label: `Schedule (${schedules.length})` },
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -804,55 +804,119 @@ export default function LiveMap() {
 
                 {/* TIMETABLE TAB */}
                 {activeTab === 'timetable' && (
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {schedules.length === 0 ? (
-                      <p
-                        className={`text-xs text-center py-6 ${
-                          isDark ? 'text-zinc-500' : 'text-zinc-400'
+                      <div
+                        className={`text-center py-8 px-4 rounded-2xl border ${
+                          isDark
+                            ? 'bg-zinc-900/40 border-zinc-800/80 text-zinc-500'
+                            : 'bg-zinc-50 border-zinc-200/80 text-zinc-400'
                         }`}
                       >
-                        No departure schedules posted.
-                      </p>
+                        <Clock className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                        <p className="text-xs font-semibold">No departure schedules posted.</p>
+                      </div>
                     ) : (
-                      schedules
-                        .filter(
-                          (s) => !selectedRoute || s.route?._id === selectedRoute._id
-                        )
-                        .map((s) => (
+                      schedules.map((s) => {
+                        const isCurrentRoute =
+                          selectedRoute &&
+                          String(s.route?._id || s.route) === String(selectedRoute._id);
+
+                        return (
                           <div
                             key={s._id}
-                            className={`p-3 rounded-2xl border ${
-                              isDark
-                                ? 'bg-zinc-900/60 border-zinc-800'
-                                : 'bg-zinc-50 border-zinc-200'
+                            onClick={() => {
+                              const targetRoute = routes.find(
+                                (r) => String(r._id) === String(s.route?._id || s.route)
+                              );
+                              if (targetRoute) {
+                                handleSelectRoute(targetRoute);
+                              }
+                            }}
+                            className={`p-3 sm:p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                              isCurrentRoute
+                                ? isDark
+                                  ? 'bg-zinc-800/90 border-white/20 shadow-md ring-1 ring-white/10'
+                                  : 'bg-zinc-100/90 border-zinc-950/20 shadow-md ring-1 ring-zinc-950/10'
+                                : isDark
+                                ? 'bg-zinc-900/60 border-zinc-800/80 hover:bg-zinc-900 hover:border-zinc-700'
+                                : 'bg-zinc-50 border-zinc-200/90 hover:bg-white hover:border-zinc-300'
                             }`}
                           >
-                            <div
-                              className={`flex justify-between items-center font-semibold text-xs sm:text-sm ${
-                                isDark ? 'text-white' : 'text-zinc-950'
-                              }`}
-                            >
-                              <span>{s.route?.routeName || 'Scheduled Trip'}</span>
+                            <div className="flex justify-between items-start gap-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span
+                                    className={`font-bold text-xs sm:text-sm tracking-tight truncate ${
+                                      isDark ? 'text-white' : 'text-zinc-950'
+                                    }`}
+                                  >
+                                    {s.route?.routeName || 'Scheduled Trip'}
+                                  </span>
+                                  {isCurrentRoute && (
+                                    <span
+                                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${
+                                        isDark
+                                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                                          : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                      }`}
+                                    >
+                                      Selected Route
+                                    </span>
+                                  )}
+                                </div>
+                                {s.route?.origin && s.route?.destination && (
+                                  <div
+                                    className={`text-[11px] mt-0.5 font-medium truncate ${
+                                      isDark ? 'text-zinc-400' : 'text-zinc-500'
+                                    }`}
+                                  >
+                                    {s.route.origin} → {s.route.destination}
+                                  </div>
+                                )}
+                              </div>
+
                               <span
-                                className={`px-2 py-0.5 rounded-full text-xs font-bold border ${
+                                className={`px-2.5 py-1 rounded-full text-xs font-bold border tracking-wide whitespace-nowrap shrink-0 ${
                                   isDark
-                                    ? 'bg-zinc-800 border-zinc-700 text-zinc-200'
-                                    : 'bg-white border-zinc-200 text-zinc-800'
+                                    ? 'bg-zinc-800 border-zinc-700 text-white'
+                                    : 'bg-white border-zinc-200 text-zinc-950 shadow-2xs'
                                 }`}
                               >
                                 {s.startTime}
+                                {s.endTime ? ` - ${s.endTime}` : ''}
                               </span>
                             </div>
+
                             <div
-                              className={`text-[11px] mt-1 flex justify-between ${
-                                isDark ? 'text-zinc-400' : 'text-zinc-500'
+                              className={`text-[11px] mt-2.5 pt-2 border-t flex flex-wrap items-center justify-between gap-1.5 ${
+                                isDark
+                                  ? 'border-zinc-800/80 text-zinc-400'
+                                  : 'border-zinc-200/60 text-zinc-500'
                               }`}
                             >
-                              <span>Vehicle: {s.bus?.busNumber || 'Assigned'}</span>
-                              <span>Days: {s.operatingDays?.join(', ')}</span>
+                              <span className="flex items-center gap-1 font-medium">
+                                <BusIcon className="w-3 h-3 opacity-70" />
+                                Bus {s.bus?.busNumber || 'Assigned'}
+                              </span>
+                              {s.driver?.name && (
+                                <span className="truncate">Driver: {s.driver.name}</span>
+                              )}
+                              {s.operatingDays?.length > 0 && (
+                                <span
+                                  className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${
+                                    isDark
+                                      ? 'bg-zinc-800/80 border-zinc-700 text-zinc-300'
+                                      : 'bg-zinc-100 border-zinc-200 text-zinc-600'
+                                  }`}
+                                >
+                                  {s.operatingDays.join(', ')}
+                                </span>
+                              )}
                             </div>
                           </div>
-                        ))
+                        );
+                      })
                     )}
                   </div>
                 )}

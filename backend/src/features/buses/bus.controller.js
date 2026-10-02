@@ -67,6 +67,27 @@ class BusController {
   async updateBus(req, res, next) {
     try {
       const bus = await busService.updateBus(req.params.id, req.body);
+
+      // Real-time Socket.IO Broadcast to all connected clients
+      try {
+        const { getIO } = await import('../../config/socket.js');
+        const io = getIO();
+        io.emit('busStatusChanged', { busId: String(bus._id), status: bus.status });
+        io.emit('locationUpdate', {
+          busId: String(bus._id),
+          busNumber: bus.busNumber,
+          status: bus.status,
+          inactive: bus.status !== 'active',
+          latitude: bus.currentLocation?.latitude,
+          longitude: bus.currentLocation?.longitude,
+          speed: bus.speed,
+          heading: bus.heading,
+          lastLocationUpdate: bus.lastLocationUpdate,
+        });
+      } catch (socketErr) {
+        console.warn('[Socket.IO] updateBus broadcast notice:', socketErr.message);
+      }
+
       return res.status(200).json({
         success: true,
         message: 'Bus updated successfully',
