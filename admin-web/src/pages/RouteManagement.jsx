@@ -65,47 +65,47 @@ export default function RouteManagement() {
   };
 
   return (
-    <div className="p-8">
-      <header className="flex items-center justify-between mb-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Route Management</h1>
-          <p className="text-gray-500">Define and manage transit routes</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Route Management</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Define transit routes, paths, and stop sequences</p>
         </div>
-        <button onClick={() => setShowCreateRoute(true)} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-          <Plus size={18} /> Create Route
+        <button onClick={() => setShowCreateRoute(true)} className="flex items-center gap-1.5 bg-blue-600 text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl hover:bg-blue-700 shadow-xs transition w-fit">
+          <Plus size={16} /> Create Route
         </button>
       </header>
 
       {message.text && (
-        <div className={`mb-4 p-3 rounded-lg border ${message.type === 'success' ? 'bg-green-50 border-green-300 text-green-800' : 'bg-red-50 border-red-300 text-red-800'}`}>
-          {message.text}
-          <button onClick={() => setMessage({ text: '', type: '' })} className="float-right font-bold">&times;</button>
+        <div className={`mb-4 p-3 rounded-xl border text-sm flex items-center justify-between ${message.type === 'success' ? 'bg-green-50 border-green-300 text-green-800' : 'bg-red-50 border-red-300 text-red-800'}`}>
+          <span>{message.text}</span>
+          <button onClick={() => setMessage({ text: '', type: '' })} className="font-bold text-lg leading-none ml-2">&times;</button>
         </div>
       )}
 
       {/* Routes Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {loading ? (
-          <p className="text-gray-400 col-span-3 text-center py-8">Loading...</p>
+          <p className="text-gray-400 col-span-full text-center py-8">Loading...</p>
         ) : routes.length === 0 ? (
-          <p className="text-gray-400 col-span-3 text-center py-8">No routes defined yet.</p>
+          <p className="text-gray-400 col-span-full text-center py-8">No routes defined yet.</p>
         ) : (
           routes.map((route) => (
-            <div key={route._id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 flex flex-col justify-between">
+            <div key={route._id} className="bg-white rounded-2xl shadow-xs border border-gray-200 p-5 sm:p-6 flex flex-col justify-between hover:shadow-md transition">
               <div>
-                <div className="flex items-start justify-between mb-1">
-                  <h3 className="font-bold text-lg text-gray-800">{route.routeName}</h3>
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="font-bold text-base sm:text-lg text-gray-900">{route.routeName}</h3>
                   <button
                     onClick={() => handleDeleteRoute(route._id, route.routeName)}
-                    className="text-red-600 hover:text-red-800 text-xs font-semibold px-2 py-1 rounded hover:bg-red-50"
+                    className="text-red-600 hover:text-red-800 text-xs font-semibold px-2 py-1 rounded-lg hover:bg-red-50 transition"
                   >
                     Delete
                   </button>
                 </div>
-                <p className="text-sm text-gray-500 mb-3">{route.origin} → {route.destination}</p>
-                <div className="flex flex-wrap gap-1">
+                <p className="text-xs sm:text-sm font-medium text-gray-500 mb-3">{route.origin} → {route.destination}</p>
+                <div className="flex flex-wrap gap-1.5">
                   {route.stops?.map((stop, i) => (
-                    <span key={stop._id || i} className="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full border border-blue-200">
+                    <span key={stop._id || i} className="bg-blue-50 text-blue-700 text-xs px-2.5 py-1 rounded-lg border border-blue-200/80 font-medium">
                       {stop.name || stop}
                     </span>
                   ))}
@@ -121,24 +121,24 @@ export default function RouteManagement() {
 
       {/* Create Route Modal */}
       {showCreateRoute && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
-            <h2 className="text-xl font-bold mb-4">Create New Route</h2>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl p-5 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold mb-4 text-gray-900">Create New Route</h2>
             <form onSubmit={handleCreateRoute}>
               <div className="mb-3">
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Route Name</label>
-                <input type="text" className="w-full p-2 border rounded-md" placeholder="e.g. Route 2: South Loop"
+                <input type="text" className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" placeholder="e.g. Route 2: South Loop"
                   value={newRoute.routeName} onChange={(e) => setNewRoute({ ...newRoute, routeName: e.target.value })} required />
               </div>
-              <div className="grid grid-cols-2 gap-3 mb-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Origin</label>
-                  <input type="text" className="w-full p-2 border rounded-md" placeholder="Start point"
+                  <input type="text" className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" placeholder="Start point"
                     value={newRoute.origin} onChange={(e) => setNewRoute({ ...newRoute, origin: e.target.value })} required />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Destination</label>
-                  <input type="text" className="w-full p-2 border rounded-md" placeholder="End point"
+                  <input type="text" className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" placeholder="End point"
                     value={newRoute.destination} onChange={(e) => setNewRoute({ ...newRoute, destination: e.target.value })} required />
                 </div>
               </div>
@@ -147,27 +147,27 @@ export default function RouteManagement() {
                 {stops.length === 0 ? (
                   <p className="text-sm text-gray-400 italic">No stops available. Create stops first.</p>
                 ) : (
-                  <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-1">
+                  <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-xl p-2 space-y-1">
                     {stops.map((stop) => (
-                      <label key={stop._id} className="flex items-center gap-2 p-1 hover:bg-gray-50 rounded cursor-pointer">
+                      <label key={stop._id} className="flex items-center gap-2.5 p-1.5 hover:bg-gray-50 rounded-lg cursor-pointer">
                         <input
                           type="checkbox"
                           checked={newRoute.stops.includes(stop._id)}
                           onChange={() => toggleStop(stop._id)}
-                          className="accent-blue-600"
+                          className="accent-blue-600 rounded"
                         />
-                        <span className="text-sm">{stop.name}</span>
+                        <span className="text-sm font-medium text-gray-700">{stop.name}</span>
                       </label>
                     ))}
                   </div>
                 )}
                 {newRoute.stops.length > 0 && (
-                  <p className="text-xs text-gray-500 mt-1">{newRoute.stops.length} stop(s) selected</p>
+                  <p className="text-xs font-semibold text-blue-600 mt-1.5">{newRoute.stops.length} stop(s) selected</p>
                 )}
               </div>
-              <div className="flex gap-3 justify-end">
-                <button type="button" onClick={() => setShowCreateRoute(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Create Route</button>
+              <div className="flex gap-2.5 justify-end pt-2">
+                <button type="button" onClick={() => setShowCreateRoute(false)} className="px-4 py-2 border rounded-xl hover:bg-gray-50 text-sm font-semibold">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 text-sm font-semibold shadow">Create Route</button>
               </div>
             </form>
           </div>

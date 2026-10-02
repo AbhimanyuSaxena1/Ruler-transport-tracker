@@ -97,47 +97,48 @@ export default function FleetManagement() {
   };
 
   return (
-    <div className="p-8">
-      <header className="flex items-center justify-between mb-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Fleet Management</h1>
-          <p className="text-gray-500">Manage buses, assign drivers, and routes</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Fleet Management</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Manage buses, assign drivers, and routes</p>
         </div>
-        <div className="flex gap-3">
-          <button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-            <Plus size={18} /> Add Bus
+        <div className="flex flex-wrap gap-2.5">
+          <button onClick={() => setShowCreateModal(true)} className="flex items-center gap-1.5 bg-blue-600 text-white text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl hover:bg-blue-700 shadow-xs transition">
+            <Plus size={16} /> Add Bus
           </button>
-          <button onClick={() => setShowAssignDriverModal(true)} className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
-            <UserPlus size={18} /> Assign Driver
+          <button onClick={() => setShowAssignDriverModal(true)} className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl hover:bg-emerald-700 shadow-xs transition">
+            <UserPlus size={16} /> Assign Driver
           </button>
-          <button onClick={() => setShowAssignRouteModal(true)} className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition">
-            <MapPin size={18} /> Assign Route
+          <button onClick={() => setShowAssignRouteModal(true)} className="flex items-center gap-1.5 bg-purple-600 text-white text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl hover:bg-purple-700 shadow-xs transition">
+            <MapPin size={16} /> Assign Route
           </button>
         </div>
       </header>
 
       {/* Flash Message */}
       {message.text && (
-        <div className={`mb-4 p-3 rounded-lg border ${message.type === 'success' ? 'bg-green-50 border-green-300 text-green-800' : 'bg-red-50 border-red-300 text-red-800'}`}>
-          {message.text}
-          <button onClick={() => setMessage({ text: '', type: '' })} className="float-right font-bold">&times;</button>
+        <div className={`mb-4 p-3 rounded-xl border text-sm flex items-center justify-between ${message.type === 'success' ? 'bg-green-50 border-green-300 text-green-800' : 'bg-red-50 border-red-300 text-red-800'}`}>
+          <span>{message.text}</span>
+          <button onClick={() => setMessage({ text: '', type: '' })} className="font-bold text-lg leading-none ml-2">&times;</button>
         </div>
       )}
 
-      {/* Buses Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="p-4 text-sm font-semibold text-gray-600">Bus Number</th>
-              <th className="p-4 text-sm font-semibold text-gray-600">Status</th>
-              <th className="p-4 text-sm font-semibold text-gray-600">Capacity</th>
-              <th className="p-4 text-sm font-semibold text-gray-600">Assigned Driver</th>
-              <th className="p-4 text-sm font-semibold text-gray-600">Assigned Route</th>
-              <th className="p-4 text-sm font-semibold text-gray-600">Last Location Update</th>
-              <th className="p-4 text-sm font-semibold text-gray-600 text-right">Actions</th>
-            </tr>
-          </thead>
+      {/* Buses Table with Responsive Scroll */}
+      <div className="bg-white rounded-2xl shadow-xs border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left whitespace-nowrap">
+            <thead className="bg-gray-50/80 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
+              <tr>
+                <th className="p-4">Bus Number</th>
+                <th className="p-4">Status</th>
+                <th className="p-4">Capacity</th>
+                <th className="p-4">Assigned Driver</th>
+                <th className="p-4">Assigned Route</th>
+                <th className="p-4">Last Location Update</th>
+                <th className="p-4 text-right">Actions</th>
+              </tr>
+            </thead>
           <tbody>
             {loading ? (
               <tr><td colSpan="7" className="p-8 text-center text-gray-400">Loading...</td></tr>
@@ -181,19 +182,20 @@ export default function FleetManagement() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Create Bus Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4">Register New Bus</h2>
             <form onSubmit={handleCreateBus}>
               <div className="mb-4">
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Bus Number</label>
                 <input
                   type="text"
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   placeholder="e.g. BUS-201"
                   value={newBus.busNumber}
                   onChange={(e) => setNewBus({ ...newBus, busNumber: e.target.value })}
@@ -204,15 +206,15 @@ export default function FleetManagement() {
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Capacity</label>
                 <input
                   type="number"
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   value={newBus.capacity}
                   onChange={(e) => setNewBus({ ...newBus, capacity: parseInt(e.target.value) })}
                   min="1"
                 />
               </div>
-              <div className="flex gap-3 justify-end">
-                <button type="button" onClick={() => setShowCreateModal(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Create Bus</button>
+              <div className="flex gap-2.5 justify-end pt-2">
+                <button type="button" onClick={() => setShowCreateModal(false)} className="px-4 py-2 border rounded-xl hover:bg-gray-50 text-sm font-semibold">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 text-sm font-semibold shadow">Create Bus</button>
               </div>
             </form>
           </div>
@@ -221,13 +223,13 @@ export default function FleetManagement() {
 
       {/* Assign Driver Modal */}
       {showAssignDriverModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4">Assign Driver to Bus</h2>
             <form onSubmit={handleAssignDriver}>
               <div className="mb-4">
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Select Bus</label>
-                <select className="w-full p-2 border rounded-md" value={assignDriverData.busId} onChange={(e) => setAssignDriverData({ ...assignDriverData, busId: e.target.value })} required>
+                <select className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" value={assignDriverData.busId} onChange={(e) => setAssignDriverData({ ...assignDriverData, busId: e.target.value })} required>
                   <option value="">-- Select Bus --</option>
                   {buses.map(b => <option key={b._id} value={b._id}>{b.busNumber}</option>)}
                 </select>
@@ -235,7 +237,7 @@ export default function FleetManagement() {
               <div className="mb-4">
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Select Driver</label>
                 <select
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   value={assignDriverData.driverId}
                   onChange={(e) => setAssignDriverData({ ...assignDriverData, driverId: e.target.value })}
                   required
@@ -248,9 +250,9 @@ export default function FleetManagement() {
                   ))}
                 </select>
               </div>
-              <div className="flex gap-3 justify-end">
-                <button type="button" onClick={() => setShowAssignDriverModal(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Assign</button>
+              <div className="flex gap-2.5 justify-end pt-2">
+                <button type="button" onClick={() => setShowAssignDriverModal(false)} className="px-4 py-2 border rounded-xl hover:bg-gray-50 text-sm font-semibold">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 text-sm font-semibold shadow">Assign</button>
               </div>
             </form>
           </div>
@@ -259,27 +261,36 @@ export default function FleetManagement() {
 
       {/* Assign Route Modal */}
       {showAssignRouteModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4">Assign Route to Bus</h2>
             <form onSubmit={handleAssignRoute}>
               <div className="mb-4">
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Select Bus</label>
-                <select className="w-full p-2 border rounded-md" value={assignRouteData.busId} onChange={(e) => setAssignRouteData({ ...assignRouteData, busId: e.target.value })} required>
+                <select className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" value={assignRouteData.busId} onChange={(e) => setAssignRouteData({ ...assignRouteData, busId: e.target.value })} required>
                   <option value="">-- Select Bus --</option>
                   {buses.map(b => <option key={b._id} value={b._id}>{b.busNumber}</option>)}
                 </select>
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Select Route</label>
-                <select className="w-full p-2 border rounded-md" value={assignRouteData.routeId} onChange={(e) => setAssignRouteData({ ...assignRouteData, routeId: e.target.value })} required>
+                <select
+                  className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  value={assignRouteData.routeId}
+                  onChange={(e) => setAssignRouteData({ ...assignRouteData, routeId: e.target.value })}
+                  required
+                >
                   <option value="">-- Select Route --</option>
-                  {routes.map(r => <option key={r._id} value={r._id}>{r.routeName}</option>)}
+                  {routes.map((r) => (
+                    <option key={r._id} value={r._id}>
+                      {r.routeName} ({r.origin} ➔ {r.destination})
+                    </option>
+                  ))}
                 </select>
               </div>
-              <div className="flex gap-3 justify-end">
-                <button type="button" onClick={() => setShowAssignRouteModal(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">Assign</button>
+              <div className="flex gap-2.5 justify-end pt-2">
+                <button type="button" onClick={() => setShowAssignRouteModal(false)} className="px-4 py-2 border rounded-xl hover:bg-gray-50 text-sm font-semibold">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 text-sm font-semibold shadow">Assign Route</button>
               </div>
             </form>
           </div>

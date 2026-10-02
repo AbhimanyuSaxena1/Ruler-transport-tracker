@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { getBuses, getRoutes, getSchedules } from '../services/api';
 import socket from '../services/socket';
 import L from 'leaflet';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 // --- Custom Leaflet Marker Icons ---
 const createBusDivIcon = (busNumber, heading = 0) => {
@@ -65,6 +66,7 @@ export default function LiveMap() {
   const [activeTab, setActiveTab] = useState('stops'); // 'stops' | 'timetable' | 'buses'
   const [searchQuery, setSearchQuery] = useState('');
   const [mapCenter, setMapCenter] = useState([28.6139, 77.2090]);
+  const [panelCollapsed, setPanelCollapsed] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -177,11 +179,14 @@ export default function LiveMap() {
   return (
     <div className="relative w-full h-screen overflow-hidden bg-slate-900 font-sans">
       {/* --- OutletBuddy Style Floating Control Panel (Left) --- */}
-      <div className="absolute top-4 left-4 w-full max-w-sm md:max-w-md pointer-events-auto" style={{ zIndex: 1000 }}>
+      <div
+        className="absolute top-3 left-3 right-3 sm:right-auto sm:left-4 sm:top-4 sm:w-80 md:w-96 pointer-events-auto"
+        style={{ zIndex: 1000 }}
+      >
         <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/40 overflow-hidden transition-all duration-300">
           
           {/* Header & Search Bar */}
-          <div className="p-5 border-b border-gray-100 bg-gradient-to-r from-blue-50/50 via-indigo-50/30 to-white">
+          <div className="p-4 sm:p-5 border-b border-gray-100 bg-gradient-to-r from-blue-50/50 via-indigo-50/30 to-white">
             <div className="flex items-center justify-between mb-3">
               <div onClick={() => navigate('/')} className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition">
                 <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md font-extrabold text-sm">
@@ -191,72 +196,90 @@ export default function LiveMap() {
                   Metro<span className="text-blue-600">Pulse</span>
                 </span>
               </div>
-              <span className="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                {activeBusesList.length} Live Buses
-              </span>
-            </div>
-
-            {/* Search Input */}
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search route or station..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-100/80 hover:bg-gray-100 focus:bg-white border border-gray-200 focus:border-blue-500 rounded-2xl text-sm font-medium focus:outline-none transition"
-              />
-              <svg className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-
-            {/* Route Selector Pills */}
-            <div className="flex gap-2 mt-3 overflow-x-auto pb-1 no-scrollbar">
-              {filteredRoutes.map((r) => (
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  {activeBusesList.length} Live
+                </span>
+                {/* Collapse toggle — only visible on small screens */}
                 <button
-                  key={r._id}
-                  onClick={() => {
-                    setSelectedRoute(r);
-                    if (r.path?.coordinates?.length > 0) {
-                      setMapCenter([r.path.coordinates[0][1], r.path.coordinates[0][0]]);
-                    }
-                  }}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
-                    selectedRoute?._id === r._id
-                      ? 'bg-slate-900 text-white shadow-md scale-105'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
+                  onClick={() => setPanelCollapsed((p) => !p)}
+                  className="md:hidden p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition"
+                  aria-label={panelCollapsed ? 'Expand panel' : 'Collapse panel'}
                 >
-                  {r.routeName}
+                  {panelCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
                 </button>
-              ))}
+              </div>
             </div>
+
+            {/* Collapsible body */}
+            {!panelCollapsed && (
+              <>
+                {/* Search Input */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search route or station..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-100/80 hover:bg-gray-100 focus:bg-white border border-gray-200 focus:border-blue-500 rounded-2xl text-sm font-medium focus:outline-none transition"
+                  />
+                  <svg className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+
+                {/* Route Selector Pills */}
+                <div className="flex gap-2 mt-3 overflow-x-auto pb-1 no-scrollbar">
+                  {filteredRoutes.map((r) => (
+                    <button
+                      key={r._id}
+                      onClick={() => {
+                        setSelectedRoute(r);
+                        if (r.path?.coordinates?.length > 0) {
+                          setMapCenter([r.path.coordinates[0][1], r.path.coordinates[0][0]]);
+                        }
+                      }}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                        selectedRoute?._id === r._id
+                          ? 'bg-slate-900 text-white shadow-md scale-105'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {r.routeName}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
-          {/* Tab Navigation */}
-          <div className="flex border-b border-gray-100 bg-gray-50/50 p-1">
-            {[
-              { id: 'stops', label: 'Route Stops' },
-              { id: 'buses', label: `Active Fleet (${activeBusesList.length})` },
-              { id: 'timetable', label: 'Schedule' },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${
-                  activeTab === tab.id
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+          {/* Tab Navigation & Content — hidden when collapsed on mobile */}
+          {!panelCollapsed && (
+            <>
+              {/* Tab Navigation */}
+              <div className="flex border-b border-gray-100 bg-gray-50/50 p-1">
+                {[
+                  { id: 'stops', label: 'Stops' },
+                  { id: 'buses', label: `Fleet (${activeBusesList.length})` },
+                  { id: 'timetable', label: 'Schedule' },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${
+                      activeTab === tab.id
+                        ? 'bg-white text-blue-600 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
 
-          {/* Panel Content Area */}
-          <div className="p-4 max-h-[50vh] overflow-y-auto space-y-3">
+              {/* Panel Content Area */}
+              <div className="p-3 sm:p-4 max-h-[35vh] sm:max-h-[50vh] overflow-y-auto space-y-3">
             {/* STOPS TAB */}
             {activeTab === 'stops' && (
               <div>
@@ -371,6 +394,8 @@ export default function LiveMap() {
               </div>
             )}
           </div>
+            </>
+          )}
 
         </div>
       </div>

@@ -79,37 +79,38 @@ export default function ScheduleManagement() {
   };
 
   return (
-    <div className="p-8">
-      <header className="flex items-center justify-between mb-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Trip Schedules & Timetables</h1>
-          <p className="text-gray-500">Manage route timetables, operating days, and assigned buses</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Trip Schedules & Timetables</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Manage route timetables, operating days, and assigned buses</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-          <Plus size={18} /> Create Schedule
+        <button onClick={() => setShowModal(true)} className="flex items-center gap-1.5 bg-blue-600 text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl hover:bg-blue-700 shadow-xs transition w-fit">
+          <Plus size={16} /> Create Schedule
         </button>
       </header>
 
       {message.text && (
-        <div className={`mb-4 p-3 rounded-lg border ${message.type === 'success' ? 'bg-green-50 border-green-300 text-green-800' : 'bg-red-50 border-red-300 text-red-800'}`}>
-          {message.text}
-          <button onClick={() => setMessage({ text: '', type: '' })} className="float-right font-bold">&times;</button>
+        <div className={`mb-4 p-3 rounded-xl border text-sm flex items-center justify-between ${message.type === 'success' ? 'bg-green-50 border-green-300 text-green-800' : 'bg-red-50 border-red-300 text-red-800'}`}>
+          <span>{message.text}</span>
+          <button onClick={() => setMessage({ text: '', type: '' })} className="font-bold text-lg leading-none ml-2">&times;</button>
         </div>
       )}
 
-      {/* Schedules Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="p-4 text-sm font-semibold text-gray-600">Route</th>
-              <th className="p-4 text-sm font-semibold text-gray-600">Bus Number</th>
-              <th className="p-4 text-sm font-semibold text-gray-600">Driver</th>
-              <th className="p-4 text-sm font-semibold text-gray-600">Departure / Arrival</th>
-              <th className="p-4 text-sm font-semibold text-gray-600">Operating Days</th>
-              <th className="p-4 text-sm font-semibold text-gray-600 text-right">Actions</th>
-            </tr>
-          </thead>
+      {/* Schedules Table with Horizontal Scroll */}
+      <div className="bg-white rounded-2xl shadow-xs border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left whitespace-nowrap">
+            <thead className="bg-gray-50/80 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
+              <tr>
+                <th className="p-4">Route</th>
+                <th className="p-4">Bus Number</th>
+                <th className="p-4">Driver</th>
+                <th className="p-4">Departure / Arrival</th>
+                <th className="p-4">Operating Days</th>
+                <th className="p-4 text-right">Actions</th>
+              </tr>
+            </thead>
           <tbody>
             {loading ? (
               <tr><td colSpan="6" className="p-8 text-center text-gray-400">Loading...</td></tr>
@@ -154,18 +155,19 @@ export default function ScheduleManagement() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Create Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Create Trip Schedule</h2>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl p-5 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold mb-4 text-gray-900">Create Trip Schedule</h2>
             <form onSubmit={handleCreate}>
               <div className="mb-3">
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Route</label>
                 <select
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
                   value={newSchedule.route}
                   onChange={(e) => setNewSchedule({ ...newSchedule, route: e.target.value })}
                   required
@@ -178,7 +180,7 @@ export default function ScheduleManagement() {
               <div className="mb-3">
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Bus</label>
                 <select
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
                   value={newSchedule.bus}
                   onChange={(e) => setNewSchedule({ ...newSchedule, bus: e.target.value })}
                   required
@@ -191,7 +193,7 @@ export default function ScheduleManagement() {
               <div className="mb-3">
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Driver (Optional)</label>
                 <select
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
                   value={newSchedule.driver}
                   onChange={(e) => setNewSchedule({ ...newSchedule, driver: e.target.value })}
                 >
@@ -200,12 +202,12 @@ export default function ScheduleManagement() {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mb-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Start Time</label>
                   <input
                     type="text"
-                    className="w-full p-2 border rounded-md"
+                    className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
                     placeholder="08:00 AM"
                     value={newSchedule.startTime}
                     onChange={(e) => setNewSchedule({ ...newSchedule, startTime: e.target.value })}
@@ -216,7 +218,7 @@ export default function ScheduleManagement() {
                   <label className="block text-sm font-semibold text-gray-700 mb-1">End Time</label>
                   <input
                     type="text"
-                    className="w-full p-2 border rounded-md"
+                    className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
                     placeholder="09:30 AM"
                     value={newSchedule.endTime}
                     onChange={(e) => setNewSchedule({ ...newSchedule, endTime: e.target.value })}
@@ -227,16 +229,16 @@ export default function ScheduleManagement() {
 
               <div className="mb-4">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Operating Days</label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {allDays.map((day) => (
                     <button
                       type="button"
                       key={day}
                       onClick={() => toggleDay(day)}
-                      className={`px-3 py-1 text-xs rounded font-semibold border ${
+                      className={`px-3 py-1.5 text-xs rounded-xl font-semibold border transition ${
                         newSchedule.operatingDays.includes(day)
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-gray-100 text-gray-600 border-gray-300'
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                          : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'
                       }`}
                     >
                       {day}
@@ -245,9 +247,9 @@ export default function ScheduleManagement() {
                 </div>
               </div>
 
-              <div className="flex gap-3 justify-end">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Create</button>
+              <div className="flex gap-2.5 justify-end pt-2">
+                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border rounded-xl hover:bg-gray-50 text-sm font-semibold">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 text-sm font-semibold shadow">Create Schedule</button>
               </div>
             </form>
           </div>
