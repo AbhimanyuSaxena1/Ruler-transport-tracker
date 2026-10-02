@@ -289,24 +289,46 @@ export default function StopManagement() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Selected Latitude</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center justify-between">
+                    <span>Latitude</span>
+                    <span className="text-[10px] text-gray-400 font-normal">(Type manually or click map)</span>
+                  </label>
                   <input
                     type="number"
                     step="any"
-                    className="w-full p-2 border border-gray-200 bg-gray-50 rounded-xl text-sm font-mono text-gray-700"
+                    className="w-full p-2.5 border border-gray-300 bg-white rounded-xl text-sm font-mono text-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none transition shadow-xs"
+                    placeholder="e.g. 28.6139"
                     value={newStop.latitude}
-                    onChange={(e) => handleSelectLocation(parseFloat(e.target.value) || 0, newStop.longitude)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setNewStop((prev) => ({ ...prev, latitude: val }));
+                      const parsed = parseFloat(val);
+                      if (!isNaN(parsed) && parsed >= -90 && parsed <= 90) {
+                        setMapCenter([parsed, parseFloat(newStop.longitude) || 0]);
+                      }
+                    }}
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Selected Longitude</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center justify-between">
+                    <span>Longitude</span>
+                    <span className="text-[10px] text-gray-400 font-normal">(Type manually or click map)</span>
+                  </label>
                   <input
                     type="number"
                     step="any"
-                    className="w-full p-2 border border-gray-200 bg-gray-50 rounded-xl text-sm font-mono text-gray-700"
+                    className="w-full p-2.5 border border-gray-300 bg-white rounded-xl text-sm font-mono text-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none transition shadow-xs"
+                    placeholder="e.g. 77.2090"
                     value={newStop.longitude}
-                    onChange={(e) => handleSelectLocation(newStop.latitude, parseFloat(e.target.value) || 0)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setNewStop((prev) => ({ ...prev, longitude: val }));
+                      const parsed = parseFloat(val);
+                      if (!isNaN(parsed) && parsed >= -180 && parsed <= 180) {
+                        setMapCenter([parseFloat(newStop.latitude) || 0, parsed]);
+                      }
+                    }}
                     required
                   />
                 </div>
