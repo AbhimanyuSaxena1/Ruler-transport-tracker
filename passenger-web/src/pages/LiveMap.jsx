@@ -120,15 +120,64 @@ export default function LiveMap() {
     };
   }, []);
 
-  // Filter routes by search query
-  const filteredRoutes = routes.filter(
-    (r) =>
-      r.routeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.origin.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.destination.toLowerCase().includes(searchQuery.toLowerCase())
+  // Filter routes & buses by search query
+  const searchLower = searchQuery.toLowerCase().trim();
+
+  const filteredBuses = Object.values(buses).filter(
+    (b) =>
+      b.busNumber?.toLowerCase().includes(searchLower) ||
+      (b.assignedRoute?.routeName && b.assignedRoute.routeName.toLowerCase().includes(searchLower))
   );
 
+  const filteredRoutes = routes.filter((r) => {
+    if (!searchLower) return true;
+    const matchesRoute =
+      r.routeName.toLowerCase().includes(searchLower) ||
+      r.origin.toLowerCase().includes(searchLower) ||
+      r.destination.toLowerCase().includes(searchLower);
+    const matchesBusNumber = filteredBuses.some((b) => {
+      const bRouteId = b.assignedRoute?._id || b.assignedRoute;
+      return bRouteId && String(bRouteId) === String(r._id);
+    });
+    return matchesRoute || matchesBusNumber;
+  });
+
   const activeBusesList = Object.values(buses);
+
+  // Attached buses for the currently selected route
+  const attachedBuses = activeBusesList.filter((b) => {
+    const bRouteId = b.assignedRoute?._id || b.assignedRoute;
+    return selectedRoute && bRouteId && String(bRouteId) === String(selectedRoute._id);
+  });
+
+  const handleSelectRoute = (route) => {
+    setSelectedRoute(route);
+    // Find if any live bus is assigned to this route
+    const liveBus = activeBusesList.find((b) => {
+      const bRouteId = b.assignedRoute?._id || b.assignedRoute;
+      return bRouteId && String(bRouteId) === String(route._id);
+    });
+
+    if (liveBus && liveBus.currentLocation?.latitude && liveBus.currentLocation?.longitude) {
+      setMapCenter([liveBus.currentLocation.latitude, liveBus.currentLocation.longitude]);
+    } else if (route.path?.coordinates?.length > 0) {
+      setMapCenter([route.path.coordinates[0][1], route.path.coordinates[0][0]]);
+    }
+  };
+
+  const handleSelectBus = (bus) => {
+    if (bus.currentLocation?.latitude && bus.currentLocation?.longitude) {
+      setMapCenter([bus.currentLocation.latitude, bus.currentLocation.longitude]);
+    }
+    // Auto-select route if assigned
+    const bRouteId = bus.assignedRoute?._id || bus.assignedRoute;
+    if (bRouteId) {
+      const matchingRoute = routes.find((r) => String(r._id) === String(bRouteId));
+      if (matchingRoute) {
+        setSelectedRoute(matchingRoute);
+      }
+    }
+  };
 
   const renderRoutePath = () => {
     if (!selectedRoute?.path?.coordinates) return null;
@@ -219,7 +268,7 @@ export default function LiveMap() {
                 <div className="relative">
                   <input
                     type="text"
-                    placeholder="Search route or station..."
+                    placeholder="Search bus number (e.g. 201) or route..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 bg-gray-100/80 hover:bg-gray-100 focus:bg-white border border-gray-200 focus:border-blue-500 rounded-2xl text-sm font-medium focus:outline-none transition"
@@ -234,12 +283,7 @@ export default function LiveMap() {
                   {filteredRoutes.map((r) => (
                     <button
                       key={r._id}
-                      onClick={() => {
-                        setSelectedRoute(r);
-                        if (r.path?.coordinates?.length > 0) {
-                          setMapCenter([r.path.coordinates[0][1], r.path.coordinates[0][0]]);
-                        }
-                      }}
+                      onClick={() => handleSelectRoute(r)}
                       className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
                         selectedRoute?._id === r._id
                           ? 'bg-slate-900 text-white shadow-md scale-105'
@@ -260,8 +304,8 @@ export default function LiveMap() {
               {/* Tab Navigation */}
               <div className="flex border-b border-gray-100 bg-gray-50/50 p-1">
                 {[
-                  { id: 'stops', label: 'Stops' },
-                  { id: 'buses', label: `Fleet (${activeBusesList.length})` },
+                  { id: 'stops', label: 'Route Stops' },
+                  { id: 'buses', label: `Fleet (${filteredBuses.length})` },
                   { id: 'timetable', label: 'Schedule' },
                 ].map((tab) => (
                   <button
@@ -285,11 +329,37 @@ export default function LiveMap() {
               <div>
                 {selectedRoute ? (
                   <div>
-                    <div className="mb-3 p-3 bg-blue-50/80 rounded-2xl border border-blue-100">
+                    {/* Selected Route Info Card */}
+                    <div className="mb-2 p-3 bg-blue-50/80 rounded-2xl border border-blue-100">
                       <div className="text-xs font-bold text-blue-600 uppercase tracking-wider">Selected Route</div>
                       <div className="font-extrabold text-slate-800 text-base">{selectedRoute.routeName}</div>
                       <div className="text-xs text-slate-500 mt-0.5">
                         {selectedRoute.origin} ➔ {selectedRoute.destination}
+                      </div>
+                    </div>
+
+                    {/* Attached Bus Banner / Detector */}
+                    <div className="mb-3 p-3 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50/60 rounded-2xl border border-emerald-200 shadow-xs">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                            🚌
+                          </div>
+                          <div>
+                            <div className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Attached Bus</div>
+                            <div className="font-extrabold text-slate-900 text-sm">
+                              {attachedBuses.length > 0 ? `Bus ${attachedBuses[0].busNumber}` : 'No live bus attached'}
+                            </div>
+                          </div>
+                        </div>
+                        {attachedBuses.length > 0 && (
+                          <button
+                            onClick={() => handleSelectBus(attachedBuses[0])}
+                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition"
+                          >
+                            Locate Bus
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -341,13 +411,13 @@ export default function LiveMap() {
             {/* BUSES TAB */}
             {activeTab === 'buses' && (
               <div className="space-y-2">
-                {activeBusesList.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-6">No buses currently broadcasting GPS.</p>
+                {filteredBuses.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-6">No matching buses broadcasting GPS.</p>
                 ) : (
-                  activeBusesList.map((bus) => (
+                  filteredBuses.map((bus) => (
                     <div
                       key={bus._id}
-                      onClick={() => setMapCenter([bus.currentLocation.latitude, bus.currentLocation.longitude])}
+                      onClick={() => handleSelectBus(bus)}
                       className="p-3 bg-gray-50/80 hover:bg-blue-50/60 rounded-2xl border border-gray-200/80 cursor-pointer transition flex items-center justify-between"
                     >
                       <div className="flex items-center gap-3">
@@ -356,11 +426,13 @@ export default function LiveMap() {
                         </div>
                         <div>
                           <div className="font-bold text-slate-800 text-sm">Bus {bus.busNumber}</div>
-                          <div className="text-xs text-gray-500">Speed: {Math.round(bus.speed)} km/h</div>
+                          <div className="text-xs text-gray-500">
+                            {bus.assignedRoute?.routeName ? `Route: ${bus.assignedRoute.routeName}` : 'No route'} • {Math.round(bus.speed)} km/h
+                          </div>
                         </div>
                       </div>
                       <span className="text-xs font-bold px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full">
-                        Live GPS
+                        Locate
                       </span>
                     </div>
                   ))

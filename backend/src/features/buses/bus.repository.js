@@ -7,12 +7,12 @@ class BusRepository {
   }
 
   async findById(id) {
-    return Bus.findById(id).populate('assignedDriver', 'name email role').exec();
+    return Bus.findById(id).populate('assignedDriver', 'name email role').populate('assignedRoute', 'routeName origin destination').exec();
   }
 
   async findByBusNumber(busNumber) {
     const numStr = String(busNumber ?? '');
-    return Bus.findOne({ busNumber: numStr.toUpperCase() }).populate('assignedDriver', 'name email').exec();
+    return Bus.findOne({ busNumber: numStr.toUpperCase() }).populate('assignedDriver', 'name email').populate('assignedRoute', 'routeName origin destination').exec();
   }
 
   async findFirstActive() {
@@ -20,7 +20,7 @@ class BusRepository {
   }
 
   async findAll(filter = {}) {
-    return Bus.find(filter).populate('assignedDriver', 'name email').exec();
+    return Bus.find(filter).populate('assignedDriver', 'name email').populate('assignedRoute', 'routeName origin destination').exec();
   }
 
   async updateLocation(busId, { latitude, longitude, speed = 0, heading = 0, accuracy = null, timestamp = new Date() }) {
