@@ -11,7 +11,8 @@ class BusRepository {
   }
 
   async findByBusNumber(busNumber) {
-    return Bus.findOne({ busNumber: busNumber.toUpperCase() }).populate('assignedDriver', 'name email').exec();
+    const numStr = String(busNumber ?? '');
+    return Bus.findOne({ busNumber: numStr.toUpperCase() }).populate('assignedDriver', 'name email').exec();
   }
 
   async findFirstActive() {

@@ -3,11 +3,12 @@ import validate from '../../middlewares/validateMiddleware.js';
 
 export const validateCreateBus = [
   body('busNumber')
+    .customSanitizer((val) => (val !== undefined && val !== null ? String(val) : ''))
     .trim()
     .notEmpty()
     .withMessage('Bus number is required')
-    .isLength({ min: 2, max: 20 })
-    .withMessage('Bus number must be between 2 and 20 characters'),
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Bus number must be between 1 and 50 characters'),
 
   body('licensePlate')
     .optional()
