@@ -22,12 +22,10 @@ const routeSchema = new mongoose.Schema({
   path: {
     type: {
       type: String,
-      enum: ['LineString'],
-      default: 'LineString'
+      enum: ['LineString']
     },
     coordinates: {
-      type: [[Number]], // Array of [longitude, latitude] arrays
-      default: []
+      type: [[Number]] // Array of [longitude, latitude] arrays
     }
   },
   isActive: {
@@ -38,7 +36,15 @@ const routeSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Enable geospatial queries for the path if needed
-routeSchema.index({ path: '2dsphere' });
+// Ensure path is undefined if coordinates are empty or less than 2 points (invalid GeoJSON LineString)
+routeSchema.pre('save', function (next) {
+  if (this.path && (!Array.isArray(this.path.coordinates) || this.path.coordinates.length < 2)) {
+    this.path = undefined;
+  }
+  next();
+});
+
+// Enable geospatial queries for the path with sparse index
+routeSchema.index({ path: '2dsphere' }, { sparse: true });
 
 export default mongoose.model('Route', routeSchema);
