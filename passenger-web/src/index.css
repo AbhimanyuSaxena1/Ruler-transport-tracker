@@ -22,3 +22,15 @@ html, body, #root {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Leaflet Dark Mode Popups */
+.dark .leaflet-popup-content-wrapper {
+  background-color: #09090b !important;
+  color: #f4f4f5 !important;
+  border: 1px solid #27272a !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
+  border-radius: 1rem !important;
+}
+.dark .leaflet-popup-tip {
+  background-color: #09090b !important;
+}
