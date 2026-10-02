@@ -161,32 +161,73 @@ export default function LiveMap() {
     fetchData();
 
     socket.on('locationUpdate', (update) => {
-      setBuses((prev) => ({
-        ...prev,
-        [update.busId]: {
-          ...prev[update.busId],
-          _id: update.busId,
-          busNumber: update.busNumber,
-          currentLocation: {
-            latitude: update.latitude,
-            longitude: update.longitude,
+      setBuses((prev) => {
+        if (update.inactive || update.status === 'inactive') {
+          const current = prev[update.busId];
+          if (!current) return prev;
+          return {
+            ...prev,
+            [update.busId]: {
+              ...current,
+              status: 'inactive',
+            },
+          };
+        }
+        return {
+          ...prev,
+          [update.busId]: {
+            ...prev[update.busId],
+            _id: update.busId,
+            busNumber: update.busNumber,
+            status: update.status || 'active',
+            currentLocation: {
+              latitude: update.latitude,
+              longitude: update.longitude,
+            },
+            speed: update.speed,
+            heading: update.heading,
+            lastLocationUpdate: update.lastLocationUpdate || new Date(),
+            stopETAs: update.stopETAs || [],
           },
-          speed: update.speed,
-          heading: update.heading,
-          stopETAs: update.stopETAs || [],
-        },
-      }));
+        };
+      });
+    });
+
+    socket.on('busStatusChanged', ({ busId, status }) => {
+      setBuses((prev) => {
+        if (!prev[busId]) return prev;
+        return {
+          ...prev,
+          [busId]: {
+            ...prev[busId],
+            status,
+          },
+        };
+      });
     });
 
     return () => {
       socket.off('locationUpdate');
+      socket.off('busStatusChanged');
     };
   }, [initialSearch]);
+
+  // Only display buses on the map if they are active AND actively sharing location within the last 3 minutes
+  const isActivelySharing = (b) => {
+    if (!b) return false;
+    if (b.status === 'inactive' || b.status === 'maintenance') return false;
+    if (!b.currentLocation?.latitude || !b.currentLocation?.longitude) return false;
+    if (!b.lastLocationUpdate) return false;
+    const ageMs = Date.now() - new Date(b.lastLocationUpdate).getTime();
+    return ageMs < 3 * 60 * 1000;
+  };
+
+  const activeBusesList = Object.values(buses).filter(isActivelySharing);
 
   // Filter routes & buses by search query
   const searchLower = searchQuery.toLowerCase().trim();
 
-  const filteredBuses = Object.values(buses).filter(
+  const filteredBuses = activeBusesList.filter(
     (b) =>
       b.busNumber?.toLowerCase().includes(searchLower) ||
       (b.assignedRoute?.routeName &&
@@ -205,8 +246,6 @@ export default function LiveMap() {
     });
     return matchesRoute || matchesBusNumber;
   });
-
-  const activeBusesList = Object.values(buses);
 
   // Attached buses for the currently selected route
   const attachedBuses = activeBusesList.filter((b) => {

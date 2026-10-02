@@ -155,6 +155,63 @@ class TrackingService {
     }
     return trackingRepository.getHistoryByBusId(busId, limit);
   }
+
+  /**
+   * Stops location tracking for the driver's assigned bus, marking it as inactive
+   * and notifying real-time clients so it disappears from the live map.
+   */
+  async stopLocationTracking(user, busId = null) {
+    let targetBusId;
+
+    if (user.role === 'driver') {
+      const assigned = user.assignedBus?._id || user.assignedBus;
+      if (!assigned) {
+        throw ApiError.badRequest('Driver is not currently assigned to any bus.');
+      }
+      targetBusId = assigned;
+    } else if (user.role === 'admin') {
+      targetBusId = busId;
+    }
+
+    if (!targetBusId) {
+      throw ApiError.badRequest('Bus ID is required.');
+    }
+
+    const bus = await busRepository.findById(targetBusId);
+    if (!bus) {
+      throw ApiError.notFound(`Bus with ID '${targetBusId}' does not exist.`);
+    }
+
+    // Mark bus status as inactive
+    const updatedBus = await busRepository.update(targetBusId, { status: 'inactive' });
+
+    // Broadcast via Socket.IO so passenger live maps immediately remove the bus marker
+    try {
+      const io = getIO();
+      io.emit('busStatusChanged', { busId: String(targetBusId), status: 'inactive' });
+      io.emit('locationUpdate', {
+        busId: String(targetBusId),
+        busNumber: bus.busNumber,
+        inactive: true,
+        status: 'inactive',
+      });
+      io.to(`bus_${targetBusId}`).emit('locationUpdate', {
+        busId: String(targetBusId),
+        busNumber: bus.busNumber,
+        inactive: true,
+        status: 'inactive',
+      });
+    } catch (e) {
+      console.error('[Socket.IO] Error broadcasting bus inactivity:', e.message);
+    }
+
+    return {
+      success: true,
+      message: `Location sharing stopped for Bus ${bus.busNumber}. Bus marked as inactive.`,
+      busId: updatedBus._id,
+      status: updatedBus.status,
+    };
+  }
 }
 
 export default new TrackingService();

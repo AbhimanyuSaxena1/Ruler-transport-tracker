@@ -35,6 +35,7 @@ class BusRepository {
         heading,
         accuracy,
         lastLocationUpdate: timestamp,
+        status: 'active',
       },
       { new: true, runValidators: true }
     ).exec();

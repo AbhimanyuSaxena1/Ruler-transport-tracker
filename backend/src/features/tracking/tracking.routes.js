@@ -21,6 +21,20 @@ router.post(
 );
 
 /**
+ * @route   POST /api/tracking/stop
+ * @desc    Driver stops location sharing: marks bus as inactive and notifies live map
+ * @access  Private (Driver or Admin)
+ */
+router.post(
+  '/stop',
+  protect,
+  authorize('driver', 'admin'),
+  (req, res, next) => {
+    trackingController.stopTracking(req, res, next);
+  }
+);
+
+/**
  * @route   GET /api/tracking/:busId/history
  * @desc    Retrieve historical GPS breadcrumbs for a specific bus
  * @access  Private (Authenticated users: Admin, Driver, Passenger)

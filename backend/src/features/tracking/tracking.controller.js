@@ -31,6 +31,20 @@ class TrackingController {
       next(error);
     }
   }
+
+  async stopTracking(req, res, next) {
+    try {
+      const result = await trackingService.stopLocationTracking(req.user, req.body?.busId);
+
+      return res.status(200).json({
+        success: true,
+        message: result.message,
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new TrackingController();

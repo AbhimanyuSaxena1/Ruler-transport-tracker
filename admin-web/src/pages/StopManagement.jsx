@@ -263,8 +263,9 @@ export default function StopManagement() {
             <div className="relative w-full h-64 rounded-2xl overflow-hidden border border-gray-300 mb-4 shadow-inner">
               <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }}>
                 <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                  url={`https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${import.meta.env.VITE_CARTO_API_KEY || 'cb1_481f_1_8f54dbe0d9a39f053f457e83'}`}
+                  subdomains={['a', 'b', 'c', 'd']}
                 />
                 <MapController center={mapCenter} onSelectLocation={handleSelectLocation} />
                 <Marker position={[newStop.latitude, newStop.longitude]} icon={stopPickerIcon} />
