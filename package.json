@@ -1,0 +1,22 @@
+{
+  "name": "metropulse-transit-tracker",
+  "version": "1.0.0",
+  "description": "MetroPulse Real-Time Transit & Bus Tracking System",
+  "private": true,
+  "scripts": {
+    "start": "node backend/src/server.js",
+    "build": "cd backend && npm install --production=false",
+    "postinstall": "cd backend && npm install",
+    "backend:dev": "cd backend && npm run dev",
+    "backend:start": "cd backend && npm start"
+  },
+  "keywords": [
+    "bus-tracking",
+    "realtime",
+    "gps",
+    "socketio"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

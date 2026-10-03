@@ -12,19 +12,35 @@ const startServer = () => {
   // Initialize Socket.IO
   initSocket(server);
 
-  server.listen(config.port, () => {
+  const HOST = '0.0.0.0';
+  const PORT = config.port;
+
+  server.listen(PORT, HOST, () => {
     console.log(`===============================================`);
     console.log(`  Bus Tracking Backend Server (ES Modules)`);
     console.log(`  Environment: ${config.env}`);
-    console.log(`  Port:        ${config.port}`);
-    console.log(`  URL:         http://localhost:${config.port}`);
+    console.log(`  Host:        ${HOST}`);
+    console.log(`  Port:        ${PORT}`);
+    console.log(`  Listening on: http://${HOST}:${PORT}`);
     console.log(`  MongoDB:     ${config.mongo.uri}`);
     console.log(`===============================================`);
   });
 
+  server.on('error', (error) => {
+    console.error(`[Server Error] Failed to bind to ${HOST}:${PORT}:`, error);
+    process.exit(1);
+  });
+
   // Initiate MongoDB connection and ensure Admin exists
-  connectDB().then(() => {
-    autoSeedAdmin();
+  connectDB().then((conn) => {
+    if (conn) {
+      autoSeedAdmin();
+    } else {
+      console.warn('⚠️ [MongoDB] Backend is active, but running without active database connection.');
+      console.warn('   Please ensure MONGO_URI is set correctly in your Render dashboard environment variables.');
+    }
+  }).catch((err) => {
+    console.error('⚠️ [MongoDB] Startup connection error:', err.message);
   });
 
   // Graceful shutdown handling

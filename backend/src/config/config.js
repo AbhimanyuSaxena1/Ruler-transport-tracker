@@ -10,8 +10,8 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const config = Object.freeze({
   env: process.env.NODE_ENV || 'development',
-  isProduction: process.env.NODE_ENV === 'production',
-  port: parseInt(process.env.PORT, 10) || 5000,
+  port: parseInt(String(process.env.PORT || '5000').trim(), 10) || 5000,
+  host: process.env.HOST || '0.0.0.0',
   mongo: {
     uri: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/bus_tracking',
     options: {

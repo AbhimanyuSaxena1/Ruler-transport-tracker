@@ -25,7 +25,23 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Health Check Route
+// Health Check Routes (Root, /health, and /api/health for Render/cloud load balancers)
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'MetroPulse Bus Tracking API is running',
+    version: '1.0.0',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     success: true,
