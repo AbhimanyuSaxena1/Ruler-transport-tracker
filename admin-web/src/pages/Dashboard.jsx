@@ -20,6 +20,7 @@ import socket from '../services/socket';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { getTileUrl, MAP_ATTRIBUTION, MAP_SUBDOMAINS } from '../utils/mapConfig';
 
 const staleMapIcon = L.divIcon({
   className: 'dashboard-stale-icon',
@@ -326,8 +327,9 @@ export default function DashboardOverview() {
                 style={{ height: '100%', width: '100%' }}
               >
                 <TileLayer
-                  attribution='&copy; CARTO'
-                  url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                  attribution={MAP_ATTRIBUTION}
+                  url={getTileUrl('voyager')}
+                  subdomains={MAP_SUBDOMAINS}
                 />
                 <Marker
                   position={[mapAlert.lastKnownLocation.latitude, mapAlert.lastKnownLocation.longitude]}

@@ -17,6 +17,7 @@ import socket from '../services/socket';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { getTileUrl, MAP_ATTRIBUTION, MAP_SUBDOMAINS } from '../utils/mapConfig';
 
 // Leaflet icon for stale last-known position
 const staleBusIcon = L.divIcon({
@@ -373,8 +374,9 @@ export default function IncidentManagement() {
                 style={{ height: '100%', width: '100%' }}
               >
                 <TileLayer
-                  attribution='&copy; CARTO'
-                  url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                  attribution={MAP_ATTRIBUTION}
+                  url={getTileUrl('voyager')}
+                  subdomains={MAP_SUBDOMAINS}
                 />
                 <Marker
                   position={[mapIncident.lastKnownLocation.latitude, mapIncident.lastKnownLocation.longitude]}
