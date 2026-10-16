@@ -9,6 +9,7 @@ import RouteManagement from './pages/RouteManagement';
 import StopManagement from './pages/StopManagement';
 import ScheduleManagement from './pages/ScheduleManagement';
 import DriverManagement from './pages/DriverManagement';
+import IncidentManagement from './pages/IncidentManagement';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -30,6 +31,8 @@ function AppRoutes() {
       >
         <Route index element={<Dashboard />} />
         <Route path="fleet" element={<FleetManagement />} />
+        <Route path="incidents" element={<IncidentManagement />} />
+        <Route path="alerts" element={<IncidentManagement />} />
         <Route path="routes" element={<RouteManagement />} />
         <Route path="stops" element={<StopManagement />} />
         <Route path="schedules" element={<ScheduleManagement />} />

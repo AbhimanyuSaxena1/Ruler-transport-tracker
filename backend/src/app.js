@@ -7,6 +7,7 @@ import busRoutes from './features/buses/bus.routes.js';
 import trackingRoutes from './features/tracking/tracking.routes.js';
 import routeRoutes from './features/routes/route.routes.js';
 import scheduleRoutes from './features/schedules/schedule.routes.js';
+import incidentRoutes from './features/incidents/incident.routes.js';
 import cookieParser from 'cookie-parser';
 import { notFoundHandler, errorHandler } from './middlewares/errorMiddleware.js';
 
@@ -56,6 +57,7 @@ app.use('/api/buses', busRoutes);
 app.use('/api/tracking', trackingRoutes);
 app.use('/api/routes', routeRoutes);
 app.use('/api/schedules', scheduleRoutes);
+app.use('/api/incidents', incidentRoutes);
 
 // Error Handling Middlewares
 app.use(notFoundHandler);

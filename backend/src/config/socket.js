@@ -19,6 +19,23 @@ export const initSocket = (server) => {
       console.log(`[Socket.IO] Client ${socket.id} subscribed to bus_${busId}`);
     });
 
+    // Admin dashboard room subscription
+    socket.on('joinAdminRoom', () => {
+      socket.join('admin_room');
+      console.log(`[Socket.IO] Admin client ${socket.id} joined admin_room`);
+    });
+
+    socket.on('leaveAdminRoom', () => {
+      socket.leave('admin_room');
+      console.log(`[Socket.IO] Admin client ${socket.id} left admin_room`);
+    });
+
+    // Check handshake auth or query for automatic admin room join
+    if (socket.handshake?.query?.role === 'admin' || socket.handshake?.auth?.role === 'admin') {
+      socket.join('admin_room');
+      console.log(`[Socket.IO] Client ${socket.id} auto-joined admin_room via handshake`);
+    }
+
     // Echo location updates for simulation purposes
     socket.on('locationUpdate', (data) => {
       socket.broadcast.emit('locationUpdate', data);

@@ -34,6 +34,11 @@ export const validateLocation = [
     .isMongoId()
     .withMessage('Provided busId must be a valid MongoDB ObjectId'),
 
+  body('recordedAt')
+    .optional({ nullable: true })
+    .isISO8601()
+    .withMessage('recordedAt must be a valid ISO8601 date'),
+
   validate,
 ];
 

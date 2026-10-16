@@ -1,5 +1,6 @@
 import busRepository from '../buses/bus.repository.js';
 import trackingRepository from './tracking.repository.js';
+import offlineMonitoringService from './offlineMonitoring.service.js';
 import ApiError from '../../utils/ApiError.js';
 import { getIO } from '../../config/socket.js';
 import { getDistanceMeters, calculateETAMinutes } from '../../utils/geoUtils.js';
@@ -17,7 +18,7 @@ class TrackingService {
    * @param {Object} user Authenticated user from authMiddleware
    * @param {Object} locationData GPS payload
    */
-  async processLocationUpdate(user, { latitude, longitude, speed = 0, heading = 0, accuracy = null, busId = null }) {
+  async processLocationUpdate(user, { latitude, longitude, speed = 0, heading = 0, accuracy = null, busId = null, recordedAt = null }) {
     let targetBusId;
 
     // Security Rule: For drivers, NEVER trust busId sent in request. Derive from driver assignment.
@@ -48,16 +49,40 @@ class TrackingService {
       throw ApiError.notFound(`Bus with ID '${targetBusId}' does not exist.`);
     }
 
-    const timestamp = new Date();
+    const serverTimestamp = new Date();
+    const effectiveRecordedAt = recordedAt ? new Date(recordedAt) : serverTimestamp;
+    const isHistorical = recordedAt && (serverTimestamp.getTime() - effectiveRecordedAt.getTime() > 60000);
 
-    // 1. Update Current Location on Bus document in MongoDB
+    if (isHistorical) {
+      // Historical queued point: persist to location history without updating live server state
+      await trackingRepository.createHistoryEntry({
+        busId: targetBusId,
+        driverId: user._id,
+        latitude,
+        longitude,
+        speed: Number(speed) || 0,
+        heading: Number(heading) || 0,
+        accuracy: accuracy !== null ? Number(accuracy) : null,
+        recordedAt: effectiveRecordedAt,
+      });
+
+      return {
+        busId: bus._id,
+        busNumber: bus.busNumber,
+        queued: true,
+        recordedAt: effectiveRecordedAt,
+        message: 'Historical queued location recorded. Live tracking status unchanged.',
+      };
+    }
+
+    // 1. Fresh Live Ping: Update Current Location on Bus document in MongoDB
     const updatedBus = await busRepository.updateLocation(targetBusId, {
       latitude,
       longitude,
       speed: Number(speed) || 0,
       heading: Number(heading) || 0,
       accuracy: accuracy !== null ? Number(accuracy) : null,
-      timestamp,
+      timestamp: serverTimestamp,
     });
 
     // 2. Persist to Location History as a separate concern in MongoDB
@@ -69,8 +94,11 @@ class TrackingService {
       speed: Number(speed) || 0,
       heading: Number(heading) || 0,
       accuracy: accuracy !== null ? Number(accuracy) : null,
-      recordedAt: timestamp,
+      recordedAt: serverTimestamp,
     });
+
+    // 3. Notify offline monitoring service of live recovery
+    await offlineMonitoringService.handleBusOnline(targetBusId, updatedBus, user, { recordedAt });
 
     // Broadcast location update via Socket.IO with Geofence & ETA telemetry
     try {
@@ -182,8 +210,14 @@ class TrackingService {
       throw ApiError.notFound(`Bus with ID '${targetBusId}' does not exist.`);
     }
 
-    // Mark bus status as inactive
-    const updatedBus = await busRepository.update(targetBusId, { status: 'inactive' });
+    // Mark bus status as inactive and trackingStatus as INACTIVE
+    const updatedBus = await busRepository.update(targetBusId, {
+      status: 'inactive',
+      trackingStatus: 'INACTIVE',
+    });
+
+    // Notify offline monitoring service so no false offline alert fires
+    await offlineMonitoringService.handleTrackingStopped(targetBusId);
 
     // Broadcast via Socket.IO so passenger live maps immediately remove the bus marker
     try {

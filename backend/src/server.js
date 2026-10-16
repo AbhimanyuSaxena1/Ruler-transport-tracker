@@ -3,6 +3,7 @@ import config from './config/config.js';
 import connectDB from './config/db.js';
 import { initSocket } from './config/socket.js';
 import autoSeedAdmin from './config/autoSeed.js';
+import offlineMonitoringService from './features/tracking/offlineMonitoring.service.js';
 import http from 'http';
 
 const startServer = () => {
@@ -31,10 +32,11 @@ const startServer = () => {
     process.exit(1);
   });
 
-  // Initiate MongoDB connection and ensure Admin exists
+  // Initiate MongoDB connection, ensure Admin exists, and launch Offline Monitoring
   connectDB().then((conn) => {
     if (conn) {
       autoSeedAdmin();
+      offlineMonitoringService.start();
     } else {
       console.warn('⚠️ [MongoDB] Backend is active, but running without active database connection.');
       console.warn('   Please ensure MONGO_URI is set correctly in your Render dashboard environment variables.');
@@ -46,6 +48,7 @@ const startServer = () => {
   // Graceful shutdown handling
   const shutdown = () => {
     console.log('\n[Server] Shutting down gracefully...');
+    offlineMonitoringService.stop();
     server.close(() => {
       console.log('[Server] HTTP server closed.');
       process.exit(0);

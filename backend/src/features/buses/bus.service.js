@@ -61,6 +61,17 @@ class BusService {
     if (!bus) {
       throw ApiError.notFound('Bus not found');
     }
+
+    if (updateData.status === 'inactive' || updateData.status === 'maintenance' || updateData.trackingEnabled === false) {
+      updateData.trackingStatus = 'INACTIVE';
+      try {
+        const offlineMonitoringService = (await import('../tracking/offlineMonitoring.service.js')).default;
+        await offlineMonitoringService.handleTrackingStopped(busId);
+      } catch (e) {
+        console.warn('[BusService] Error syncing offline status on update:', e.message);
+      }
+    }
+
     return busRepository.update(busId, updateData);
   }
 

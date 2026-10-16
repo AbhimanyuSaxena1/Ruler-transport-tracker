@@ -1,15 +1,75 @@
-import React, { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, Bus, Users, Map as MapIcon, Activity, MapPin, Calendar, Menu, X } from 'lucide-react';
+import {
+  LogOut,
+  Bus,
+  Users,
+  Map as MapIcon,
+  Activity,
+  MapPin,
+  Calendar,
+  Menu,
+  X,
+  ShieldAlert,
+  Bell
+} from 'lucide-react';
+import apiClient from '../services/api';
+import socket from '../services/socket';
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openAlertsCount, setOpenAlertsCount] = useState(0);
+  const [activeBannerAlert, setActiveBannerAlert] = useState(null);
+
+  const fetchOpenAlerts = async () => {
+    try {
+      const res = await apiClient.get('/incidents?status=OPEN');
+      const count = res.data.pagination?.total ?? (res.data.data?.length || 0);
+      setOpenAlertsCount(count);
+    } catch (err) {
+      console.warn('Failed to load incident count:', err.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchOpenAlerts();
+
+    // Real-time socket listeners
+    const handleBusOffline = (alert) => {
+      setOpenAlertsCount((prev) => prev + 1);
+      setActiveBannerAlert(alert);
+    };
+
+    const handleBackOnline = () => {
+      fetchOpenAlerts();
+    };
+
+    const handleAcknowledged = () => {
+      fetchOpenAlerts();
+    };
+
+    socket.on('bus:offline', handleBusOffline);
+    socket.on('bus:back_online', handleBackOnline);
+    socket.on('incident:acknowledged', handleAcknowledged);
+
+    // Re-sync on socket reconnect
+    socket.on('reconnect', fetchOpenAlerts);
+
+    return () => {
+      socket.off('bus:offline', handleBusOffline);
+      socket.off('bus:back_online', handleBackOnline);
+      socket.off('incident:acknowledged', handleAcknowledged);
+      socket.off('reconnect', fetchOpenAlerts);
+    };
+  }, []);
 
   const navItems = [
     { to: '/', icon: Activity, label: 'Dashboard' },
     { to: '/fleet', icon: Bus, label: 'Fleet' },
+    { to: '/incidents', icon: ShieldAlert, label: 'Incidents & Alerts', badge: openAlertsCount },
     { to: '/routes', icon: MapIcon, label: 'Routes' },
     { to: '/stops', icon: MapPin, label: 'Stops' },
     { to: '/schedules', icon: Calendar, label: 'Schedules' },
@@ -62,15 +122,22 @@ export default function AdminLayout() {
               end={item.to === '/'}
               onClick={closeMobileMenu}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm transition-all ${
+                `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm transition-all ${
                   isActive
                     ? 'bg-white text-zinc-950 font-bold shadow-xs'
                     : 'text-zinc-400 hover:bg-zinc-900 hover:text-white font-medium'
                 }`
               }
             >
-              <item.icon size={17} />
-              {item.label}
+              <div className="flex items-center gap-3">
+                <item.icon size={17} />
+                {item.label}
+              </div>
+              {item.badge > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-red-600 text-white animate-pulse">
+                  {item.badge}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -110,10 +177,52 @@ export default function AdminLayout() {
             <Bus size={18} className="text-zinc-950" />
             <span className="font-bold text-base text-gray-900">Transit Admin</span>
           </div>
-          <div className="w-8 h-8 rounded-full bg-zinc-900 text-white flex items-center justify-center text-xs font-bold">
-            {user?.name ? user.name.slice(0, 2).toUpperCase() : 'AD'}
+          <div className="flex items-center gap-2">
+            {openAlertsCount > 0 && (
+              <button
+                onClick={() => navigate('/incidents')}
+                className="relative p-1.5 rounded-lg bg-red-50 text-red-600"
+              >
+                <Bell size={18} />
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600 text-white text-[10px] font-extrabold flex items-center justify-center">
+                  {openAlertsCount}
+                </span>
+              </button>
+            )}
+            <div className="w-8 h-8 rounded-full bg-zinc-900 text-white flex items-center justify-center text-xs font-bold">
+              {user?.name ? user.name.slice(0, 2).toUpperCase() : 'AD'}
+            </div>
           </div>
         </header>
+
+        {/* Global Live Offline Alert Toast / Banner */}
+        {activeBannerAlert && (
+          <div className="bg-red-600 text-white px-4 py-2.5 flex items-center justify-between text-xs sm:text-sm font-bold shadow-md z-20">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping"></span>
+              <span>
+                🔴 ALERT: Bus {activeBannerAlert.busNumber} is OFFLINE! No GPS location received within timeout.
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setActiveBannerAlert(null);
+                  navigate('/incidents');
+                }}
+                className="px-2.5 py-1 bg-white text-red-700 rounded-lg text-xs font-black hover:bg-red-50 transition cursor-pointer"
+              >
+                Inspect Incident
+              </button>
+              <button
+                onClick={() => setActiveBannerAlert(null)}
+                className="p-1 hover:bg-red-700 rounded-lg cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Scrollable Page Body */}
         <main className="flex-1 overflow-y-auto min-w-0">

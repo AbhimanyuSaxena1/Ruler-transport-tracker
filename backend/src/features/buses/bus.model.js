@@ -62,6 +62,27 @@ const busSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    trackingEnabled: {
+      type: Boolean,
+      default: true,
+      index: true,
+    },
+    trackingStatus: {
+      type: String,
+      enum: ['ONLINE', 'SUSPECTED_OFFLINE', 'OFFLINE', 'INACTIVE'],
+      default: 'INACTIVE',
+      index: true,
+    },
+    organizationId: {
+      type: String,
+      default: 'default_org',
+      index: true,
+    },
+    lastOfflineIncident: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Incident',
+      default: null,
+    },
   },
   {
     timestamps: true,

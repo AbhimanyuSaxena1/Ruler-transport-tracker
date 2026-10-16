@@ -36,8 +36,27 @@ class BusRepository {
         accuracy,
         lastLocationUpdate: timestamp,
         status: 'active',
+        trackingStatus: 'ONLINE',
       },
       { new: true, runValidators: true }
+    ).exec();
+  }
+
+  async findTrackableBuses() {
+    return Bus.find({
+      status: 'active',
+      trackingEnabled: { $ne: false },
+    })
+      .populate('assignedDriver', 'name email role')
+      .populate('assignedRoute', 'routeName origin destination')
+      .exec();
+  }
+
+  async updateTrackingStatus(busId, trackingStatus, extra = {}) {
+    return Bus.findByIdAndUpdate(
+      busId,
+      { trackingStatus, ...extra },
+      { new: true }
     ).exec();
   }
 
